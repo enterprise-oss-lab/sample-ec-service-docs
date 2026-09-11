@@ -12,6 +12,19 @@ https://github.com/enterprise-oss-lab/sample-ec-service/pull/37
 
 構成図: [architecture/2026-09-11-pr37.html](architecture/2026-09-11-pr37.html)（最新版は [index.html](index.html)）。このPR自体の差分に加え、本コミット時点の main（同日にマージ済みの PR #38: HTTPハンドラ配線・`POST /admin/media-assets/cleanup` を含む）を反映した最新の全体構成を示している。
 
+## 2026-09-11 — PR #36: media_asset repository + product tx内confirm連携
+
+https://github.com/enterprise-oss-lab/sample-ec-service/pull/36
+
+PR #34 で追加した `media_assets` のドメイン層・マイグレーションに対し、Postgres リポジトリ実装を追加。あわせて、画像アップロードと商品保存が別トランザクションになることで生じる2相コミット問題を避けるため、商品の作成/更新トランザクション内で pending 画像を confirmed に遷移させる連携を実装した。
+
+- `internal/repository/postgres/media_asset.go` に `mediaAssetRepository` / `txMediaAssetRepository` を追加。`RunInTx` は `SELECT FOR UPDATE` でロックを取得し並行更新から保護
+- `txMediaAssetRepository.Confirm` を追加し、`storage_key` に紐づく pending 行を `confirmed` に遷移して `product_id` を紐付け（対象が見つからない場合は `ErrMediaAssetNotConfirmable`）
+- `productRepository.Create` / `Update` から、商品保存と同一の DB トランザクション内で `Confirm` を呼び出すよう配線（`product.go`）
+- usecase 層（`RegisterPending`/`CleanupExpired`）と HTTP 配線は後続の PR #37・PR #38 で完成している
+
+構成図: [architecture/2026-09-11-pr36.html](architecture/2026-09-11-pr36.html)（最新版は [index.html](index.html)）。このPR自体の差分に加え、本コミット時点の main（同日にマージ済みの PR #37: usecase層、PR #38: HTTPハンドラ配線を含む）を反映した最新の全体構成を示している。
+
 ## 2026-09-11 — PR #34: media_assets のマイグレーション/config/domain層を追加
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/34
