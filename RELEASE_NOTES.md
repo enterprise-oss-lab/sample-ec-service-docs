@@ -1,5 +1,17 @@
 # sample-ec-service リリースノート
 
+## 2026-09-11 — PR #37: media_assets usecase層 (RegisterPending/CleanupExpired)
+
+https://github.com/enterprise-oss-lab/sample-ec-service/pull/37
+
+孤立アップロード（商品保存に紐付かないまま残る画像）を削除できるようにするため、media_assets の生存管理ユースケースを追加した。UploadImage 成功後に pending 登録し、商品保存トランザクション内で confirmed に遷移させ、確定しなかった pending は期限切れ後に削除する。
+
+- `UploadImage` 成功後に `RegisterPending` を呼び、`media_assets` へ `status=pending, expires_at=now+TTL` で登録
+- 商品作成/更新と同一 DB トランザクションで `Confirm`（pending→confirmed, product_id 紐付け）を実行し、画像保存と商品保存の2相コミット問題を回避
+- `CleanupExpired` は期限切れ pending を1行ずつ `SELECT FOR UPDATE` でロックし、RustFS から削除→DB 行削除。ロック後に confirmed 等へ遷移済みの行は deleted/failed いずれにも計上せずスキップ
+
+構成図: [architecture/2026-09-11-pr37.html](architecture/2026-09-11-pr37.html)（最新版は [index.html](index.html)）。このPR自体の差分に加え、本コミット時点の main（同日にマージ済みの PR #38: HTTPハンドラ配線・`POST /admin/media-assets/cleanup` を含む）を反映した最新の全体構成を示している。
+
 ## 2026-09-11 — PR #34: media_assets のマイグレーション/config/domain層を追加
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/34
