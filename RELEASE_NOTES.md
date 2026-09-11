@@ -1,5 +1,18 @@
 # sample-ec-service リリースノート
 
+## 2026-09-11 — PR #34: media_assets のマイグレーション/config/domain層を追加
+
+https://github.com/enterprise-oss-lab/sample-ec-service/pull/34
+
+RustFS (S3互換ストレージ) にアップロードした商品画像の生存管理テーブル `media_assets` を新設。pending/confirmed の2状態と `expires_at` を持たせ、商品に紐付かないまま放置されたアップロードを孤立データとして扱えるようにする土台（マイグレーション・config・domain層）を追加した。リポジトリ実装・トランザクション内confirm連携・usecase層・HTTP配線は後続の PR #36〜#38 で完成している。
+
+- `services/inventory/db/migrations/005_create_media_assets.sql` で `media_assets` テーブルを新設
+- `config.go` に `MediaAssetPendingTTL` を追加
+- `domain/media_asset.go` に `MediaAsset` 型と `MediaAssetRepository` インターフェースを追加
+- `domain/image.go` / `adapter/storage/s3.go` に画像アップロード関連の型・実装を追加
+
+構成図: [architecture/2026-09-11-pr34.html](architecture/2026-09-11-pr34.html)（最新版は [index.html](index.html)）。このPR自体の差分に加え、本コミット時点の main（同日にマージ済みの PR #36: リポジトリ実装+tx内confirm連携、PR #37: usecase層 RegisterPending/CleanupExpired、PR #38: HTTPハンドラ配線を含む）を反映した最新の全体構成を示している。
+
 ## 2026-09-11 — PR #38: media_assets の HTTPハンドラ・main.go配線 (最終Task)
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/38
