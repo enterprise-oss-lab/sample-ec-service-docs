@@ -1,5 +1,15 @@
 # sample-ec-service リリースノート
 
+## 2026-09-11 — PR #44: main マージ時のみ Multica に通知するよう CI を修正
+
+https://github.com/enterprise-oss-lab/sample-ec-service/pull/44
+
+Multica 通知ワークフローが `pull_request: closed` のあらゆるブランチで発火していたのを、`main` へのマージのみに限定した。アプリケーションコード・アーキテクチャへの変更はなし。
+
+- `.github/workflows/notify-multica-on-merge.yaml` に `branches: [main]` を追加
+
+構成図: [architecture/2026-09-11-pr44.html](architecture/2026-09-11-pr44.html)（最新版は [index.html](index.html)）。前回の構成図更新 (PR #20) 以降に main へ入った Inventory Service の Redis キャッシュ層（PR #40〜#42: 在庫は TTL 1秒、商品カタログは TTL 60秒の cache-aside）を含む、現在の main の構成を反映している。
+
 ## 2026-09-08 — PR #20: カタログ属性を products に分離し、storefront を商品詳細対応
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/20
