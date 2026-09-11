@@ -1,5 +1,17 @@
 # sample-ec-service リリースノート
 
+## 2026-09-11 — PR #38: media_assets の HTTPハンドラ・main.go配線 (最終Task)
+
+https://github.com/enterprise-oss-lab/sample-ec-service/pull/38
+
+`MediaAssetHandler` を新設して `POST /admin/media-assets/cleanup` を公開し、usecase/repository 層 (Task1〜3) で実装済みだった孤立アップロード削除運用をHTTP層まで配線して完成させた。あわせて `CreateProduct`/`UpdateProduct` に `ErrMediaAssetNotConfirmable` の 422 ハンドリングを、既存の `ErrInsufficientStock`/`ErrInvalidQuantity` と同じ分岐パターンで追加した。
+
+- `services/inventory/internal/adapter/http/media_asset.go` を新規追加し `MediaAssetHandler.CleanupExpired` を実装
+- `services/inventory/main.go` に `httphandler.NewMediaAssetHandler(mediaAssetUC).RegisterRoutes(r)` を配線
+- `CreateProduct`/`UpdateProduct` (`inventory.go`) に `ErrMediaAssetNotConfirmable` → 422 の分岐を追加
+
+構成図: [architecture/2026-09-11-pr38.html](architecture/2026-09-11-pr38.html)（最新版は [index.html](index.html)）。sample-ec-service の現在の main (commit `3d564b1`) を根拠に、storefront/admin (React) → inventory (Go+Gin) / order (FastAPI) → 各PostgreSQL、Redis cache-aside、RustFS (S3互換) によるメディアアセット管理、Kafka 経由の在庫引当saga、otel-lgtm への OTLP 送出までを含む全体構成を反映している。
+
 ## 2026-09-11 — PR #44: main マージ時のみ Multica に通知するよう CI を修正
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/44
