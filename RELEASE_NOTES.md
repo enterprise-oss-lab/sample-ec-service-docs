@@ -1,5 +1,15 @@
 # sample-ec-service リリースノート
 
+## 2026-09-14 — PR #45: スタックPRの中間マージではMultica通知を抑制
+
+https://github.com/enterprise-oss-lab/sample-ec-service/pull/45
+
+`notify-multica-on-merge.yaml` の発火条件に、スタックPR（`pull_request.stack`）の位置チェックを追加した。スタックの途中PRがマージされた際に中間状態で構成図・リリースノート更新のautopilotが発火してしまうのを防ぎ、スタックの最後のPRがマージされたとき（または非スタックPRの通常マージ時）のみ通知するようにした。アプリケーションコード・アーキテクチャへの変更はなし。
+
+- `.github/workflows/notify-multica-on-merge.yaml` の `if` 条件に `github.event.pull_request.stack == null || github.event.pull_request.stack.position == github.event.pull_request.stack.size` を追加
+
+構成図: [architecture/2026-09-14-pr45.html](architecture/2026-09-14-pr45.html)（最新版は [index.html](index.html)）。本PR自体はCI設定のみの変更のため、現在の main (commit `e812bbb`) が持つ全体構成は前回更新時点 (PR #38: media_assets の HTTPハンドラ配線、`3d564b1`) から変わっておらず、この構成図はその現状を再確認する内容になっている。
+
 ## 2026-09-11 — PR #37: media_assets usecase層 (RegisterPending/CleanupExpired)
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/37
