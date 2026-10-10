@@ -1,5 +1,17 @@
 # sample-ec-service リリースノート
 
+## 2026-10-11 — PR #52: 実ZITADELによる認証・認可E2Eと利用手順
+
+[PR #52](https://github.com/enterprise-oss-lab/sample-ec-service/pull/52) — マージコミット: `be8f8674dd9172525ca72ea6f0dcad4982fd8624`（マージ日時: 2026-10-10 22:57:59 UTC / 2026-10-11 JST）。Webhook記載のマージ先は `auth/frontend-authentication`。図はこのコミットに固定し、ブランチの移動による混在を避けている。
+
+既存の認証構成に対し、`scripts/auth-e2e.mjs` と `make test-auth-e2e` を追加。Compose上の実ZITADELとPlaywrightで購入者2名・管理者のログインを行い、注文作成と自身の履歴参照、他者注文への404、購入者の管理API利用への403、匿名アクセスへの401、管理者の商品作成・在庫調整・画像アップロード、購入者のAdmin画面拒否を検証する。
+
+ルート・Storefront・Admin・Inventory・Order・k6のREADMEに、環境変数の準備、起動、認証付きAPIやE2Eの実行手順を追記・修正した。本PRの差分はテストと手順書であり、ZITADEL・JWT認可そのものの導入は先行変更による。
+
+構成図: [PR #52時点](architecture/2026-10-11-pr52.html) / [最新版](index.html)。React SPA、ZITADEL（Traefik・Login・専用PostgreSQLを集約）、Inventory/Order、各DB、Redis、RustFS、Kafkaを表示。JWKS検証とOTLP送出は補足カードに記載。ローカル開発環境の構成であり、本番配備図ではない。本文は日本語、固定Viewer UIとHTMLのlang属性は英語。
+
+検証: archify showcase 9/9、エラー・警告0、コミット固定のソース参照13件を検証。4画面サイズ（1440×900〜2048×1320）の収まりとライト・ダーク表示を確認。今回のドキュメント更新ではアプリケーションE2Eは実行していない。
+
 ## 2026-09-14 — PR #45: スタックPRの中間マージではMultica通知を抑制
 
 https://github.com/enterprise-oss-lab/sample-ec-service/pull/45
