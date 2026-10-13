@@ -1,5 +1,22 @@
 # sample-ec-service リリースノート
 
+## 2026-10-13 — PR #53: 注文時点の単価を明細へ保存
+
+[PR #53](https://github.com/enterprise-oss-lab/sample-ec-service/pull/53) — mainへのマージコミット `8f1bc203b3abd3da9fcc90bb2bc6de02b177e233`（2026-10-13 06:46:37 UTC）。構成図はこのコミットの実コードを根拠としている。
+
+注文作成時にOrderがInventoryの `GET /products/{inventory_id}` をHTTPで呼び出し、送信された期待価格と照合する。一致した取得価格を `order_items.unit_price_at_order` に保存し、注文APIの明細レスポンスにも返す。照合は注文保存・Kafkaへの在庫引当要求発行より前に行われる。
+
+- **API互換性変更**: `POST /orders` の各明細に `expected_unit_price` が必須。Storefront・モック・k6の送信形式も更新。
+- 価格不一致は409、商品が存在しない場合は422、商品APIへの通信失敗・エラーレスポンス・不正価格は502。HTTPクライアントのタイムアウトは5秒。
+- マイグレーション `003_add_unit_price_at_order.sql` は非負・NOT NULLの整数列を追加。既存明細は過去価格が不明なため0で埋める。0は実際の購入価格の復元ではない。
+- Composeに `INVENTORY_BASE_URL=http://inventory:8080` とInventory起動依存を追加。既存のPostgreSQLボリュームには初期化SQLが再実行されないため、既存環境では003の適用が必要。
+
+構成図: [PR #53時点](architecture/2026-10-13-pr53.html) / [最新版](index.html) / [JSON仕様](architecture/2026-10-13-pr53.json)。ローカルCompose構成を表示。認証基盤は集約し、Kafkaの結果経路・JWT/JWKS・OTLP送出は補足カードに記載。Storefrontの商品API参照とInventoryのS3操作はノード内に記載。本文は日本語、固定Viewer UIとHTMLのlang属性は英語。
+
+検証: archify validate → deliver、showcase 9/9・エラー0・警告0、コード参照10件を検証。4サイズ（1440×900、1600×1000、1920×1080、2048×1320）でoverflowなし。ライト・ダーク画像を目視確認（visual_review: passed、correction_rounds: 2）。ドキュメントのみの更新で、アプリケーションテストは未実行。
+
+仕様SHA-256: `056f667e5842fd28f5fa54e1a2175761f031fe78364175ce0fcc9242fbfcd211`（6155 bytes）。HTML SHA-256: `7bcc5d22050a1caeeb992040938d97015c312c8b55ee4808208eafea1a37d452`（709690 bytes）。
+
 ## 2026-10-11 — PR #52: 実ZITADELによる認証・認可E2Eと利用手順
 
 [PR #52](https://github.com/enterprise-oss-lab/sample-ec-service/pull/52) — マージコミット: `be8f8674dd9172525ca72ea6f0dcad4982fd8624`（マージ日時: 2026-10-10 22:57:59 UTC / 2026-10-11 JST）。Webhook記載のマージ先は `auth/frontend-authentication`。図はこのコミットに固定し、ブランチの移動による混在を避けている。
