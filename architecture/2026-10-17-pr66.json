@@ -1,0 +1,322 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "sample-ec-service｜PR #66 pre-commit",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1040,
+      500
+    ],
+    "repository": {
+      "url": "https://github.com/enterprise-oss-lab/sample-ec-service",
+      "revision": "b022f5eb3fa627df4ee6ace7dd8cec02a6cb611d"
+    }
+  },
+  "components": [
+    {
+      "id": "shop",
+      "type": "frontend",
+      "label": "Storefront",
+      "sublabel": "React・商品APIも直接参照",
+      "pos": [
+        40,
+        20.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "frontends/storefront/src/features/order/api.ts"
+        }
+      ]
+    },
+    {
+      "id": "orders",
+      "type": "backend",
+      "label": "Order",
+      "sublabel": "FastAPI・価格照合と注文",
+      "pos": [
+        400,
+        20.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/order/internal/usecase/order.py"
+        }
+      ]
+    },
+    {
+      "id": "orderdata",
+      "type": "database",
+      "label": "注文DB",
+      "sublabel": "PostgreSQL・単価保存",
+      "pos": [
+        760,
+        20.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/order/db/migrations/003_add_unit_price_at_order.sql"
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "type": "security",
+      "label": "ZITADEL",
+      "sublabel": "Traefik / Login / 専用DB",
+      "pos": [
+        40,
+        145.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "catalog",
+      "type": "backend",
+      "label": "Inventory",
+      "sublabel": "Go / Gin・商品と在庫",
+      "pos": [
+        400,
+        145.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/main.go"
+        }
+      ]
+    },
+    {
+      "id": "events",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "在庫引当の要求・結果",
+      "pos": [
+        760,
+        145.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/order/main.py"
+        }
+      ]
+    },
+    {
+      "id": "console",
+      "type": "frontend",
+      "label": "Admin",
+      "sublabel": "React・商品／画像管理",
+      "pos": [
+        40,
+        270.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "frontends/admin/src/features/inventory/api.ts"
+        }
+      ]
+    },
+    {
+      "id": "catalogdata",
+      "type": "database",
+      "label": "商品・在庫DB",
+      "sublabel": "PostgreSQL・media_assets",
+      "pos": [
+        400,
+        270.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/main.go"
+        }
+      ]
+    },
+    {
+      "id": "cache",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "在庫1秒・商品60秒",
+      "pos": [
+        760,
+        270.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/main.go"
+        }
+      ]
+    },
+    {
+      "id": "images",
+      "type": "cloud",
+      "label": "RustFS",
+      "sublabel": "InventoryがS3で保存・削除",
+      "pos": [
+        40,
+        395.0
+      ],
+      "size": [
+        240,
+        80
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/internal/adapter/storage/s3.go"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "shop",
+      "to": "orders",
+      "label": "HTTP /orders"
+    },
+    {
+      "from": "orders",
+      "to": "orderdata",
+      "label": "SQL"
+    },
+    {
+      "from": "orders",
+      "to": "catalog",
+      "label": "GET /products/{id}",
+      "labelAt": [
+        520,
+        115.72916666666667
+      ]
+    },
+    {
+      "from": "shop",
+      "to": "identity",
+      "label": "OIDC",
+      "labelAt": [
+        160,
+        115.72916666666667
+      ]
+    },
+    {
+      "from": "console",
+      "to": "identity",
+      "label": "OIDC"
+    },
+    {
+      "from": "console",
+      "to": "catalog",
+      "label": "HTTP /admin/*"
+    },
+    {
+      "from": "catalog",
+      "to": "catalogdata",
+      "label": "SQL",
+      "labelAt": [
+        520,
+        240.72916666666666
+      ]
+    },
+    {
+      "from": "catalog",
+      "to": "cache",
+      "label": "キャッシュ"
+    },
+    {
+      "from": "console",
+      "to": "images",
+      "label": "画像取得 (HTTP)",
+      "labelAt": [
+        160,
+        365.7291666666667
+      ]
+    },
+    {
+      "from": "orders",
+      "to": "events",
+      "label": "要求を発行",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "top",
+      "labelAt": [
+        740,
+        122
+      ]
+    },
+    {
+      "from": "events",
+      "to": "catalog",
+      "label": "要求を消費",
+      "variant": "dashed",
+      "labelAt": [
+        736,
+        255
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "PR #66：コミット前の品質検査",
+      "items": [
+        "Go: gofmt / golangci-lint。",
+        "Python: Ruff、両SPA: Prettier / ESLint。",
+        "変更対象に応じて実行。CIも継続。"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "非同期処理と認証",
+      "items": [
+        "Kafka: inventory.reservation.requests / results",
+        "Order→要求→Inventory、結果は逆方向。",
+        "両SPAはOIDC、APIはJWT/JWKSで認可。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "範囲と運用",
+      "items": [
+        "Composeのローカル構成。認証基盤は集約。",
+        "両API → otel-lgtm にOTLP送出。",
+        "サービス間の接続構成に変更なし。"
+      ]
+    }
+  ]
+}

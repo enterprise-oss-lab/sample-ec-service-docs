@@ -1,5 +1,23 @@
 # sample-ec-service リリースノート
 
+## 2026-10-17 — PR #66: pre-commitでLinter・Formatterを実行
+
+[PR #66](https://github.com/enterprise-oss-lab/sample-ec-service/pull/66) — mainへのマージコミット `b022f5eb3fa627df4ee6ace7dd8cec02a6cb611d`（2026-10-17 08:00:04 UTC）。構成図はこのコミットの実コードを根拠としている。
+
+コミット前に変更対象のコンポーネントで整形・lintを実行するlocal hookを追加。変更は `.pre-commit-config.yaml` とREADMEのみで、API・DB・サービス間接続に変更はない。
+
+- Inventory: ステージ済みGoファイルをgofmtで整形し、Go変更時にサービス全体へ `golangci-lint run ./...` を実行。
+- Order: 対象Pythonファイルへ `ruff format` / `ruff check` を実行。
+- Admin / Storefront: 対象ファイルへPrettier、JS/TSファイルへESLintを実行。各frontendのディレクトリで既存設定を使用。
+- detect-secretsからAdminの生成済みMSW workerを除外。固定チェックサムの誤検出を回避する。
+- READMEにツール準備、`pre-commit install`、初回全件実行、整形後の再ステージ手順を追記。CIの品質チェックも継続する。
+
+構成図: [PR #66時点](architecture/2026-10-17-pr66.html) / [最新版](index.html) / [JSON仕様](architecture/2026-10-17-pr66.json)。Composeのローカル構成を表示し、認証基盤は集約。Kafkaの結果経路・JWT/JWKS・OTLP送出は補足カードに記載。本文は日本語、固定Viewer UIとHTMLのlang属性は英語。
+
+検証: architecture形式、archify validate → deliver、showcase 9/9・エラー0・警告0、コミット固定のソース参照10件を検証。4サイズ（1440×900、1600×1000、1920×1080、2048×1320）でoverflowなし。最小・最大サイズのライト／ダーク画像を目視確認（visual_review: passed、correction_rounds: 0）。ドキュメントのみの更新で、アプリケーションテストは未実行。
+
+仕様SHA-256: `5b87767d190e2e94f544022289f9d221e7e05708f23db6a56e4ebaefb5919c6c`（6122 bytes）。HTML SHA-256: `ad7a95289b5269bee2c2a6eee0ec1fbdf4c06b8345bd4ea0d6775d1d6ceafa66`（709635 bytes）。
+
 ## 2026-10-17 — PR #55: Linter・FormatterとCI品質ゲートを導入
 
 [PR #55](https://github.com/enterprise-oss-lab/sample-ec-service/pull/55) — mainへのマージコミット `07149685a08c66de63d7f775373efcf517e2ebad`（2026-10-17 07:30:21 UTC）。構成図はこのコミットの実コードを根拠としている。
