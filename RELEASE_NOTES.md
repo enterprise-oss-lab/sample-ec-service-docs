@@ -1,5 +1,22 @@
 # sample-ec-service リリースノート
 
+## 2026-10-17 — PR #55: Linter・FormatterとCI品質ゲートを導入
+
+[PR #55](https://github.com/enterprise-oss-lab/sample-ec-service/pull/55) — mainへのマージコミット `07149685a08c66de63d7f775373efcf517e2ebad`（2026-10-17 07:30:21 UTC）。構成図はこのコミットの実コードを根拠としている。
+
+4アプリのCIにlint・formatチェックを追加し、ユニットテスト前に実行する。サービス間接続・API・DBスキーマの構成変更はない。
+
+- Storefront / Admin: ESLintに `eslint-config-prettier` を組み合わせ、Prettierの `format` / `format:check` を追加。生成済みMSW workerはPrettier対象外。CIのpnpmを10.32.1に固定。
+- Inventory: golangci-lint v2.6.1（errcheck / govet / ineffassign / staticcheck / unused）とgofmtを追加。Close・Rollbackの戻り値を明示的に破棄する修正を含む。
+- Order: Ruff 0.14.11でlint・import整列・formatを検査。Python 3.10を対象とする。
+- ルートMakefileに `make lint` / `make format-check` / `make format` とアプリ別ターゲットを追加。既存コードの整形、README、lockfile、`.git-blame-ignore-revs` を更新。
+
+構成図: [PR #55時点](architecture/2026-10-17-pr55.html) / [最新版](index.html) / [JSON仕様](architecture/2026-10-17-pr55.json)。Composeのローカル構成を表示し、認証基盤は集約。Kafkaの結果経路・JWT/JWKS・OTLP送出は補足カードに記載。本文は日本語、固定Viewer UIとHTMLのlang属性は英語。
+
+検証: architecture形式、archify validate → deliver、showcase 9/9・エラー0・警告0、コミット固定のソース参照10件を検証。4サイズ（1440×900、1600×1000、1920×1080、2048×1320）でoverflowなし。最小・最大サイズのライト／ダーク画像を目視確認（visual_review: passed、correction_rounds: 0）。ドキュメントのみの更新で、アプリケーションテストは未実行。
+
+仕様SHA-256: `496292a6101907d4721346be46332a99126fbe5a2441d6a9e7ef0da41daaec6b`（6114 bytes）。HTML SHA-256: `eaeb5a1233277d0537b913614a5bf874efe8e01e82d27d6937e32437ea75cb44`（709647 bytes）。
+
 ## 2026-10-13 — PR #53: 注文時点の単価を明細へ保存
 
 [PR #53](https://github.com/enterprise-oss-lab/sample-ec-service/pull/53) — mainへのマージコミット `8f1bc203b3abd3da9fcc90bb2bc6de02b177e233`（2026-10-13 06:46:37 UTC）。構成図はこのコミットの実コードを根拠としている。
