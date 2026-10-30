@@ -1,0 +1,244 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "sample-ec-service｜PR #65 分析基盤",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1020,
+      575
+    ],
+    "repository": {
+      "url": "https://github.com/enterprise-oss-lab/sample-ec-service",
+      "revision": "93a1713088e905538da8859e7bd856fe58c019ae"
+    }
+  },
+  "components": [
+    {
+      "id": "apps",
+      "type": "frontend",
+      "label": "Storefront / Admin",
+      "sublabel": "React・購入者／管理者UI",
+      "pos": [
+        40,
+        30
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "type": "backend",
+      "label": "Order / Inventory",
+      "sublabel": "FastAPI / Go・HTTP＋Kafka",
+      "pos": [
+        395,
+        30
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "operational",
+      "type": "database",
+      "label": "業務データ基盤",
+      "sublabel": "PostgreSQL ×2 / Redis",
+      "pos": [
+        750,
+        30
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "query",
+      "type": "external",
+      "label": "分析クライアント",
+      "sublabel": "CLI / UI・localhost:28080",
+      "pos": [
+        40,
+        245
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "scripts/analytics-smoke.sh"
+        }
+      ]
+    },
+    {
+      "id": "trino",
+      "type": "backend",
+      "label": "Trino 483",
+      "sublabel": "Iceberg connector・Parquet",
+      "pos": [
+        395,
+        245
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "analytics/trino/catalog/iceberg.properties"
+        }
+      ]
+    },
+    {
+      "id": "catalog",
+      "type": "backend",
+      "label": "Iceberg REST Catalog",
+      "sublabel": "1.8.1・localhost:18181",
+      "pos": [
+        750,
+        245
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.analytics.yaml"
+        }
+      ]
+    },
+    {
+      "id": "objects",
+      "type": "cloud",
+      "label": "RustFS 共有ストレージ",
+      "sublabel": "analytics / products を分離",
+      "pos": [
+        395,
+        460
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "catalogdb",
+      "type": "database",
+      "label": "Catalog SQLite",
+      "sublabel": "named volume・WAL",
+      "pos": [
+        750,
+        460
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.analytics.yaml"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "ui-api",
+      "to": "business",
+      "label": "HTTP API",
+      "from": "apps"
+    },
+    {
+      "id": "business-db",
+      "to": "operational",
+      "label": "SQL / Redis",
+      "from": "business"
+    },
+    {
+      "id": "sql-client",
+      "to": "trino",
+      "label": "SQL / HTTP",
+      "variant": "emphasis",
+      "from": "query"
+    },
+    {
+      "id": "rest-access",
+      "to": "catalog",
+      "label": "REST / HTTP",
+      "variant": "emphasis",
+      "from": "trino"
+    },
+    {
+      "id": "query-files",
+      "to": "objects",
+      "label": "S3 読み書き",
+      "from": "trino",
+      "labelDy": 65
+    },
+    {
+      "id": "catalog-jdbc",
+      "to": "catalogdb",
+      "label": "JDBC",
+      "from": "catalog",
+      "labelDy": 65
+    },
+    {
+      "id": "metadata-files",
+      "to": "objects",
+      "label": "S3 メタデータ",
+      "from": "catalog"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "既存ECとの境界",
+      "items": [
+        "Order / InventoryはKafkaで在庫引当を連携。認証はZITADEL、監視はOTel LGTM。",
+        "InventoryはRustFSのproductsを使用。分析側は業務DBへ接続しない。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "分析基盤の初期化",
+      "items": [
+        "bucket作成・volume権限設定後にCatalog、Trinoを起動。",
+        "namespace-initでbronze / goldを作成。Flink・CDC連携は未実装。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "ローカルPoC",
+      "items": [
+        "REST / Trinoはlocalhost公開。固定資格情報・認証なし。",
+        "Catalog DBとS3データを永続化。本文は日本語、Viewer UI / langは英語。"
+      ]
+    }
+  ]
+}

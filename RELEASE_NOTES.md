@@ -1,5 +1,24 @@
 # sample-ec-service リリースノート
 
+## 2026-10-31 — PR #65: Iceberg REST Catalog・Object Storage・Trinoを構築
+
+[PR #65](https://github.com/enterprise-oss-lab/sample-ec-service/pull/65) — mainへのマージコミット `93a1713088e905538da8859e7bd856fe58c019ae`（2026-10-30 22:34:55 UTC / 2026-10-31 JST）。構成図はこのコミットの実コードに固定。
+
+`compose.analytics.yaml` にローカル分析基盤を追加。既存ECのRustFS 1.0.0-rc.4を共有し、商品画像用 `products` と分離した `analytics` bucketを使用する。
+
+- Iceberg REST Catalog 1.8.1は `s3://analytics/` をwarehouseとし、SQLite（WAL）のcatalog DBをnamed volumeへ永続化。S3FileIOでRustFSへ接続する。
+- Trino 483はIceberg REST connectorとnative S3でCatalog・RustFSへ接続し、Parquetを使用。Order／Inventory PostgreSQLへの接続は追加しない。
+- bucket作成とcatalog volume権限設定をone-shotサービスで実施。healthcheckを待ってCatalog→Trinoを起動し、namespace-initで `bronze` / `gold` を冪等に作成する。
+- ホスト公開はCatalogが `127.0.0.1:18181`、Trinoが `127.0.0.1:28080`（変更可能）。固定資格情報・認証なしのローカルPoCであり、本番用ではない。
+- `scripts/analytics-smoke.sh` に書込・読取（3行・合計60）、再起動後の読取、停止、分析データの削除手順を追加。通常初期化ではテストテーブルを作らない。
+- Flink connector・ジョブ・CDC連携は後続Issue #59の対象で、今回の実装には含まれない。
+
+構成図: [PR #65時点](architecture/2026-10-31-pr65.html) / [最新版](index.html) / [JSON仕様](architecture/2026-10-31-pr65.json)。既存ECは集約表示し、認証・監視・在庫引当連携とInventoryの商品画像アクセスは補足カードに記載。本文は日本語、固定Viewer UIとHTMLのlang属性は英語。
+
+検証: architecture形式、archify validate → deliver、showcase 9/9・エラー0・警告0、コミット固定のソース参照8件を検証。1440×900、1600×1000、1920×1080、2048×1320でoverflowなし。最小・最大サイズのライト／ダーク画像を目視確認（visual_review: passed、correction_rounds: 1）。ドキュメントのみの更新のため、Docker smoke／アプリケーションテストは未実行。
+
+仕様SHA-256: `cf849cc467400d43e6d4334b4d0a355a5f7cbee67d02487f82f25c58b438ef38`（4842 bytes）。HTML SHA-256: `c695af093561c653a0d9013d7f0d1d615fb129601425472df899392700cb7f94`（704347 bytes）。
+
 ## 2026-10-17 — PR #66: pre-commitでLinter・Formatterを実行
 
 [PR #66](https://github.com/enterprise-oss-lab/sample-ec-service/pull/66) — mainへのマージコミット `b022f5eb3fa627df4ee6ace7dd8cec02a6cb611d`（2026-10-17 08:00:04 UTC）。構成図はこのコミットの実コードを根拠としている。
