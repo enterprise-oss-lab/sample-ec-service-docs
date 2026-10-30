@@ -1,0 +1,296 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "sample-ec-service — PR #67 注文確定CDC",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1340,
+      840
+    ],
+    "repository": {
+      "url": "https://github.com/enterprise-oss-lab/sample-ec-service",
+      "revision": "7fa6cf15d7fbf8363bd3728ccdfb74d9e9a6c429"
+    }
+  },
+  "components": [
+    {
+      "id": "web",
+      "type": "frontend",
+      "label": "Storefront / Admin",
+      "sublabel": "React・ブラウザ",
+      "pos": [
+        40,
+        170
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "type": "backend",
+      "label": "Order Service",
+      "sublabel": "FastAPI・注文確定",
+      "pos": [
+        360,
+        170
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "services/order/main.py"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "Order PostgreSQL",
+      "sublabel": "注文 + outbox_events",
+      "pos": [
+        700,
+        170
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "services/order/internal/repository/postgres/order.py"
+        }
+      ]
+    },
+    {
+      "id": "cdc",
+      "type": "backend",
+      "label": "Debezium Connect",
+      "sublabel": "pgoutput / Outbox SMT",
+      "pos": [
+        1030,
+        170
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/debezium/order-outbox.json"
+        }
+      ]
+    },
+    {
+      "id": "events",
+      "type": "messagebus",
+      "label": "order.confirmed",
+      "sublabel": "Kafka・event_idキー",
+      "pos": [
+        1030,
+        430
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/debezium/order-outbox.json"
+        }
+      ]
+    },
+    {
+      "id": "saga",
+      "type": "messagebus",
+      "label": "Kafka 在庫引当",
+      "sublabel": "requests / results",
+      "pos": [
+        360,
+        430
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "compose.yaml"
+        }
+      ]
+    },
+    {
+      "id": "inventory",
+      "type": "backend",
+      "label": "Inventory Service",
+      "sublabel": "Go / Gin・商品と在庫",
+      "pos": [
+        40,
+        430
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/main.go"
+        }
+      ]
+    },
+    {
+      "id": "invdb",
+      "type": "database",
+      "label": "Inventory PostgreSQL",
+      "sublabel": "商品・在庫・画像管理",
+      "pos": [
+        40,
+        690
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/internal/repository/postgres/product.go"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "cache-aside",
+      "pos": [
+        360,
+        690
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/internal/repository/cache/product.go"
+        }
+      ]
+    },
+    {
+      "id": "rustfs",
+      "type": "cloud",
+      "label": "RustFS",
+      "sublabel": "S3互換・商品画像",
+      "pos": [
+        700,
+        690
+      ],
+      "size": [
+        230,
+        76
+      ],
+      "sources": [
+        {
+          "path": "services/inventory/internal/adapter/storage/s3.go"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "web-order",
+      "from": "web",
+      "to": "order",
+      "label": "HTTP"
+    },
+    {
+      "id": "order-db",
+      "from": "order",
+      "to": "db",
+      "label": "同一TX"
+    },
+    {
+      "id": "db-cdc",
+      "from": "db",
+      "to": "cdc",
+      "label": "WAL / CDC"
+    },
+    {
+      "id": "cdc-events",
+      "from": "cdc",
+      "to": "events",
+      "label": "非同期配信",
+      "labelDy": 90
+    },
+    {
+      "id": "order-saga",
+      "from": "order",
+      "to": "saga",
+      "label": "引当要求",
+      "labelDy": 90
+    },
+    {
+      "id": "saga-inventory",
+      "from": "saga",
+      "to": "inventory",
+      "label": "要求 / 結果"
+    },
+    {
+      "id": "web-inventory",
+      "from": "web",
+      "to": "inventory",
+      "label": "HTTP",
+      "labelDy": 90
+    },
+    {
+      "id": "inventory-invdb",
+      "from": "inventory",
+      "to": "invdb",
+      "label": "SQL",
+      "labelDy": 90,
+      "labelDx": -32
+    },
+    {
+      "id": "inventory-redis",
+      "from": "inventory",
+      "to": "redis",
+      "label": "キャッシュ",
+      "labelDy": -24
+    },
+    {
+      "id": "inventory-rustfs",
+      "from": "inventory",
+      "to": "rustfs",
+      "label": "S3 API",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "PR #67: 確定イベントの配信",
+      "items": [
+        "注文確定とOutbox INSERTは同一DBトランザクション。",
+        "DebeziumがWALから order.confirmed へ配信。利用側は重複排除が必要。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "構成の範囲",
+      "items": [
+        "ローカルComposeの主要経路。ZITADEL認証・OTLP監視・任意analytics構成は省略。",
+        "日本語本文。固定Viewer UIとhtml langは英語へフォールバック。"
+      ]
+    }
+  ]
+}

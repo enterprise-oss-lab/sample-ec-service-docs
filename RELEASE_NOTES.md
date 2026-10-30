@@ -1,5 +1,21 @@
 # sample-ec-service リリースノート
 
+## 2026-10-31 — PR #67: Debeziumで注文確定OutboxをKafkaへ配信
+
+[PR #67](https://github.com/enterprise-oss-lab/sample-ec-service/pull/67) — mainへのマージコミット `7fa6cf15d7fbf8363bd3728ccdfb74d9e9a6c429`（2026-10-30 22:37:12 UTC / 2026-10-31 JST）。構成図はこのコミットの実コードに固定。
+
+- Order PostgreSQLの `wal_level=logical` を有効化し、Debezium Connect 3.3.1.Finalと冪等なconnector登録サービスを追加。注文確定・Outbox INSERTの同一トランザクションは既存実装を利用する。
+- `pgoutput` が `public.outbox_events` のcommit済みWALを読み、Outbox Event Routerで `order.confirmed` へ配信。初期snapshotあり、at-least-once。キーは注文IDではなく `event_id` のUUID文字列。値は展開したJSON payloadで、Connect envelopeを含めない。
+- Kafkaイベントtopicとcompact設定のConnect内部topicを明示作成。設定・offset・状態はKafka volume、replication slot/publicationはDB volumeに永続化する。REST APIは `127.0.0.1:8083` に限定。
+- 既存の在庫引当Saga（Order→requests→Inventory→results→Order）は継続。図では往復を集約して表示。OrderからInventoryの商品価格取得HTTP、ZITADEL認証・OTLP監視・任意analytics構成は省略。Flinkの重複排除・CDC後段処理は後続Issue #59。
+- CIと専用Composeスモークを追加。commit済みpayload、rollback/未commit行の非配信、停止中INSERTの再起動後配信、初期化再実行を検証する構成。既存DBは必要に応じてOutbox migrationを適用し、connector長期停止時はWAL容量を監視する。
+
+構成図: [PR #67時点](architecture/2026-10-31-pr67.html) / [最新版](index.html) / [JSON仕様](architecture/2026-10-31-pr67.json)。日本語本文、固定Viewer UIとHTML langは英語。
+
+検証: architecture形式、archify validate → deliver、showcase 9/9・エラー0・警告0、コミット固定のソース参照10件を検証。1440×900・1600×1000・1920×1080・2048×1320でoverflowなし。最小ライト／最大ダークの画像を目視確認（visual_review: passed、correction_rounds: 2）。ドキュメントのみの更新のためアプリ／Docker smokeは未実行。
+
+仕様SHA-256: `eac8f7977b1eca031bd56421ba5334907a6909e9c4978ad246b547f72b5e688d`（5718 bytes）。HTML SHA-256: `901be9ee8e2a905cdc8d3ef04be5330b7bbb4792dcd48ef223c01e8d77e85c28`（710981 bytes）。
+
 ## 2026-10-31 — PR #65: Iceberg REST Catalog・Object Storage・Trinoを構築
 
 [PR #65](https://github.com/enterprise-oss-lab/sample-ec-service/pull/65) — mainへのマージコミット `93a1713088e905538da8859e7bd856fe58c019ae`（2026-10-30 22:34:55 UTC / 2026-10-31 JST）。構成図はこのコミットの実コードに固定。
